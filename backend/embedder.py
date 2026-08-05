@@ -2,6 +2,7 @@ import chromadb
 from chromadb.utils import embedding_functions
 from typing import List, Dict
 import hashlib
+import logging
 
 CHROMA_DIR = "../vectorstore"
 COLLECTION_NAME = "multimodal_rag"
@@ -10,6 +11,10 @@ EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 _collection = None
 
 def get_collection():
+    """
+    Returns the ChromaDB collection instance.
+    If the collection does not exist, it is created with the specified embedding function and metadata.
+    """
     global _collection
     if _collection is None:
         client = chromadb.PersistentClient(path=CHROMA_DIR)
@@ -19,11 +24,21 @@ def get_collection():
         _collection = client.get_or_create_collection(
             name=COLLECTION_NAME,
             embedding_function=emb_fn,
-            metadata={"hnsw:space": "cosine"}
+            metadata={{"hnsw:space": "cosine"}}
         )
     return _collection
 
 def embed_and_store(chunks: List[Dict], source: str) -> int:
+    """
+    Embeds and stores the given chunks in the ChromaDB collection.
+
+    Args:
+        chunks (List[Dict]): A list of dictionaries containing the chunk data.
+        source (str): The source of the chunks.
+
+    Returns:
+        int: The number of chunks stored.
+    """
     if not chunks:
         return 0
     collection = get_collection()
@@ -49,10 +64,13 @@ def embed_and_store(chunks: List[Dict], source: str) -> int:
     BATCH_SIZE = 50
     for start in range(0, len(documents), BATCH_SIZE):
         end = start + BATCH_SIZE
-        collection.upsert(
-            documents=documents[start:end],
-            metadatas=metadatas[start:end],
-            ids=ids[start:end]
-        )
+        try:
+            collection.upsert(
+                documents=documents[start:end],
+                metadatas=metadatas[start:end],
+                ids=ids[start:end]
+            )
+        except Exception as e:
+            logging.error(f"Error upserting chunk {start}:{end}: {e}")
     print(f"Stored {len(documents)} chunks. Total in DB: {collection.count()}")
     return len(documents)
