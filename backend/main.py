@@ -1,5 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Body
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 import uvicorn
 from pathlib import Path
 import shutil
@@ -38,7 +40,23 @@ def check_credentials(username: str, password: str) -> bool:
     """
     return username == "1234" and password == "1234"
 
-@app.get("/")
+# Serve static files (frontend assets)
+app.mount("/static", StaticFiles(directory="../frontend"), name="static")
+
+@app.get("/", response_class=HTMLResponse)
+def root():
+    """Return the login page.
+
+    The login page is a simple HTML form that posts credentials to the
+    ``/login`` endpoint. After a successful login the front‑end JavaScript will
+    load the main application UI.
+    """
+    login_path = Path("../frontend/login.html")
+    if login_path.is_file():
+        return FileResponse(login_path)
+    return HTMLResponse("<h1>Login page not found</h1>", status_code=404)
+
+@app.get("/health")
 def health():
     """Health‑check endpoint.
 

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <style>
+        body {font-family: Arial, sans-serif; display: flex; height: 100vh; justify-content: center; align-items: center; background: #f0f0f0;}
+        .login-box {background: white; padding: 20px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);}
+        input {display: block; width: 100%; margin-bottom: 10px; padding: 8px;}
+        button {padding: 8px 16px;}
+    </style>
+</head>
+<body>
+<div class="login-box">
+    <h2>Login</h2>
+    <input type="text" id="username" placeholder="Username" />
+    <input type="password" id="password" placeholder="Password" />
+    <button onclick="doLogin()">Login</button>
+    <p id="msg" style="color:red;"></p>
+</div>
+<script>
+function doLogin() {
+    const user = document.getElementById('username').value;
+    const pwd = document.getElementById('password').value;
+    fetch('/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({username: user, password: pwd})
+    })
+    .then(r => {
+        if (!r.ok) throw new Error('Invalid credentials');
+        return r.json();
+    })
+    .then(data => {
+        // Simple placeholder for main app UI
+        document.body.innerHTML = '<h1>Main Application Loaded</h1>';
+    })
+    .catch(err => {
+        document.getElementById('msg').textContent = err.message;
+    });
+}
+</script>
+</body>
+</html>
